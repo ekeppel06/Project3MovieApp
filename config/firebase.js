@@ -22,11 +22,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const firebaseConfig = {
 
-  apiKey: "AIzaSyBsKT7MwBao3gOnp8DeWXhMsSB19vFyhHs",
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
 
   authDomain: "project3movieapp.firebaseapp.com",
 
-  projectId: "project3movieapp",
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
 
   storageBucket: "project3movieapp.firebasestorage.app",
 
