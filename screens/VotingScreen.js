@@ -27,6 +27,7 @@ export default function VotingScreen({ route, navigation }) {
     return () => { unsubRoom(); unsubMovies(); };
   }, [roomId]);
  
+  //Loading buffer
   if (!room) {
     return (
       <View style={styles.centered}>
@@ -52,6 +53,7 @@ export default function VotingScreen({ route, navigation }) {
     return voterSet.size;
   };
  
+  //Voting Handler
   const handleVote = async (tmdbId) => {
     if (!isVotingActive || voting) return;
     setVoting(true);
@@ -64,7 +66,7 @@ export default function VotingScreen({ route, navigation }) {
     }
   };
  
-  // ─── Winner screen ──────────────────────────────────────────────────────
+  //Winner Screen
   if (votingEnded) {
     return (
       <View style={styles.container}>
@@ -127,7 +129,7 @@ export default function VotingScreen({ route, navigation }) {
     );
   }
  
-  // ─── Ballot ─────────────────────────────────────────────────────────────
+  //Ballot Handler (renders the movies being voted on)
   const renderMovie = ({ item }) => {
     const voteCount = Object.keys(votes[item.tmdbId] || {}).length;
     const isMyVote = String(myVotedId) === String(item.tmdbId);
@@ -174,6 +176,7 @@ export default function VotingScreen({ route, navigation }) {
     );
   };
  
+  //Voting Screen
   return (
     <View style={styles.container}>
       {/* Status banner */}
@@ -201,6 +204,7 @@ export default function VotingScreen({ route, navigation }) {
   );
 }
  
+//VotingScreen StyleSheet
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },

@@ -26,7 +26,7 @@ export default function HomeScreen({ navigation }) {
     loadRooms();
   }, []);
  
-  // Also reload when the screen is focused (e.g. after leaving a room)
+  //Reload when the screen is focused (e.g. after leaving a room)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', loadRooms);
     return unsubscribe;
@@ -42,20 +42,20 @@ export default function HomeScreen({ navigation }) {
       setLoading(false);
     }
   }
- 
+ //Create Room Menu
   const openCreate = () => {
     setModalMode('create');
     setRoomName('');
     setRoomDesc('');
     setModalVisible(true);
   };
- 
+ //Join Room Menu
   const openJoin = () => {
     setModalMode('join');
     setInviteCode('');
     setModalVisible(true);
   };
- 
+ //Submit Button Handler
   const handleSubmit = async () => {
     setSubmitting(true);
     try {
@@ -77,7 +77,7 @@ export default function HomeScreen({ navigation }) {
       setSubmitting(false);
     }
   };
- 
+ //Render available rooms in list (aka rooms you are hosting/already joined)
   const renderRoom = ({ item }) => (
     <TouchableOpacity
       style={styles.roomCard}
@@ -95,6 +95,7 @@ export default function HomeScreen({ navigation }) {
     </TouchableOpacity>
   );
  
+  //HomeScreen Render
   return (
     <View style={styles.container}>
       {loading ? (

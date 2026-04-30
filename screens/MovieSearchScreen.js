@@ -13,7 +13,7 @@ import {
 import { searchMovies, posterUrl } from '../config/tmdb';
 import { addMovieToRoom } from '../services/roomService';
  
-// Simple debounce hook to avoid firing a search on every keystroke
+//Debounces search bar to avoid firing a search on every keystroke
 function useDebounce(fn, delay = 500) {
   const timer = { current: null };
   return useCallback(
@@ -31,10 +31,9 @@ export default function MovieSearchScreen({ route, navigation }) {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [adding, setAdding] = useState(null); // tmdbId of movie currently being added
- 
-  // ─── Search ──────────────────────────────────────────────────────────────
- 
+  const [adding, setAdding] = useState(null); //tmdbId of movie currently being added
+
+  //Search handler
   const runSearch = useCallback(async (text) => {
     if (text.trim().length < 2) {
       setResults([]);
@@ -58,8 +57,7 @@ export default function MovieSearchScreen({ route, navigation }) {
     debouncedSearch(text);
   };
  
-  // ─── Add to Room ─────────────────────────────────────────────────────────
- 
+  //Add to Room Handler
   const handleAdd = async (movie) => {
     setAdding(movie.tmdbId);
     try {
@@ -75,8 +73,7 @@ export default function MovieSearchScreen({ route, navigation }) {
     }
   };
  
-  // ─── Render ──────────────────────────────────────────────────────────────
- 
+  //Render Movie
   const renderMovie = ({ item }) => {
     const isAdding = adding === item.tmdbId;
  
@@ -157,6 +154,7 @@ export default function MovieSearchScreen({ route, navigation }) {
   );
 }
  
+//MovieSearchScreen StyleSheet
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   searchBar: {

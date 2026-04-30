@@ -22,9 +22,8 @@ export default function RoomScreen({ route, navigation }) {
   const [hostActionLoading, setHostActionLoading] = useState(false);
   const currentUserId = auth.currentUser?.uid;
  
-  // ─── Real-time subscriptions ───
-  // Both listeners fire immediately with current data, then again on every change.
-  // onSnapshot returns an unsubscribe function — we call it in the cleanup.
+  //Both real-time listeners fire immediately with current data, then again on every change.
+  //OnSnapshot returns an unsubscribe function to stop listening
  
   useEffect(() => {
     const unsubRoom = subscribeToRoom(roomId, (data) => {
@@ -40,7 +39,7 @@ export default function RoomScreen({ route, navigation }) {
     };
   }, [roomId]);
  
-
+    //Loading Buffer
     if (!room) {
         return (
         <View style={styles.centered}>
@@ -52,8 +51,6 @@ export default function RoomScreen({ route, navigation }) {
     const isHost = room.createdBy === currentUserId;
     const isVotingActive = room.votingActive === true;
     const votingEnded = !isVotingActive && room.votingEndedAt;
-
-  // ─── Actions ───
  
   const handleShare = () => {
     Share.share({
@@ -61,6 +58,7 @@ export default function RoomScreen({ route, navigation }) {
     });
   };
  
+  //Leave Room Handler
   const handleLeave = () => {
     Alert.alert('Leave Room', `Are you sure you want to leave "${room?.name}"?`, [
       { text: 'Cancel', style: 'cancel' },
@@ -75,8 +73,9 @@ export default function RoomScreen({ route, navigation }) {
     ]);
   };
  
+  //Remove Movie Handler
   const handleRemoveMovie = (movie) => {
-    // Only the person who added it can remove it
+    //Only the person who added it can remove it
     if (movie.addedBy !== currentUserId) {
       Alert.alert('Not allowed', 'Only the person who added this movie can remove it.');
       return;
@@ -90,7 +89,8 @@ export default function RoomScreen({ route, navigation }) {
       },
     ]);
   };
- 
+    //Start voting handler
+    //If there's less than 2 movies, will pop up asking you to add at least 2.
     const handleStartVoting = async () => {
     if (movies.length < 2) {
       Alert.alert('Not enough movies', 'Add at least 2 movies before starting a vote.');
@@ -114,6 +114,7 @@ export default function RoomScreen({ route, navigation }) {
     ]);
   };
  
+  //End vote handler, declares winner after
   const handleEndVoting = async () => {
     Alert.alert('End Voting?', 'This will close the ballot and reveal the winner.', [
       { text: 'Cancel', style: 'cancel' },
@@ -134,9 +135,7 @@ export default function RoomScreen({ route, navigation }) {
     ]);
   };
 
-
-  // ─── Render ───
- 
+  //Loading buffer
   if (!room) {
     return (
       <View style={styles.centered}>
@@ -145,6 +144,7 @@ export default function RoomScreen({ route, navigation }) {
     );
   }
  
+  //Render movie from TMDB data
   const renderMovie = ({ item }) => (
     <TouchableOpacity
       style={styles.movieCard}
@@ -168,7 +168,8 @@ export default function RoomScreen({ route, navigation }) {
       </View>
     </TouchableOpacity>
   );
- 
+  
+  //Render RoomScreen
   return (
     <View style={styles.container}>
       {/* Room header */}

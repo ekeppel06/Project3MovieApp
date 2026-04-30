@@ -17,24 +17,20 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
  
-// ─── Helpers ───────────────────────────────────────────────────────────────
- 
+//Returns current user
 function currentUser() {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
   return user;
 }
- 
+
+//Generates invite code
 function generateInviteCode() {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 }
  
-// ─── Rooms ─────────────────────────────────────────────────────────────────
- 
-/**
- * Create a new room. Creator is automatically added as a member.
- * Returns the new room's Firestore ID.
- */
+//Create a new room. Creator is automatically added as a member.
+//Returns the new room's Firestore ID.
 export async function createRoom({ name, description = '' }) {
   const user = currentUser();
  
@@ -50,15 +46,13 @@ export async function createRoom({ name, description = '' }) {
   return roomRef.id;
 }
  
-/**
- * Join a room using its invite code.
- * Throws if the code is invalid.
- * Returns the room ID.
- */
+
+//Join a room using its invite code, throws if the code is invalid.
+//Returns the room ID.
 export async function joinRoomByCode(inviteCode) {
   const user = currentUser();
  
-  // Query for the room with this invite code
+  //Query for the room with this invite code
   const q = query(
     collection(db, 'rooms'),
     where('inviteCode', '==', inviteCode.toUpperCase())
@@ -72,12 +66,12 @@ export async function joinRoomByCode(inviteCode) {
   const roomDoc = snapshot.docs[0];
   const roomData = roomDoc.data();
  
-  // Already a member? Just return the room ID
+  //Returns roomID if already a member
   if (roomData.memberIds.includes(user.uid)) {
     return roomDoc.id;
   }
  
-  // Add the user to the members array
+  //Add the user to the members array
   await updateDoc(roomDoc.ref, {
     memberIds: arrayUnion(user.uid),
   });
@@ -85,9 +79,7 @@ export async function joinRoomByCode(inviteCode) {
   return roomDoc.id;
 }
  
-/**
- * Leave a room. If the user is the last member, the room is deleted.
- */
+//Leave a room. If the user is the last member, the room is deleted.
 export async function leaveRoom(roomId) {
   const user = currentUser();
   const roomRef = doc(db, 'rooms', roomId);
@@ -98,7 +90,6 @@ export async function leaveRoom(roomId) {
   const { memberIds } = roomSnap.data();
  
   if (memberIds.length <= 1) {
-    // Last member leaving — delete the room and its movies
     const moviesSnap = await getDocs(collection(db, 'rooms', roomId, 'movies'));
     const deletions = moviesSnap.docs.map((d) => deleteDoc(d.ref));
     await Promise.all(deletions);
@@ -108,9 +99,7 @@ export async function leaveRoom(roomId) {
   }
 }
  
-/**
- * Fetch all rooms the current user is a member of.
- */
+//Fetch all rooms the current user is a member of.
 export async function getUserRooms() {
   const user = currentUser();
  
@@ -123,10 +112,9 @@ export async function getUserRooms() {
   return snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
  
-/**
- * Real-time listener for a single room's data.
- * Call the returned unsubscribe function to stop listening.
- */
+
+//Real-time listener for a single room's data.
+//Call the returned unsubscribe function to stop listening.
 export function subscribeToRoom(roomId, onUpdate) {
   const roomRef = doc(db, 'rooms', roomId);
   return onSnapshot(roomRef, (snap) => {
@@ -136,12 +124,9 @@ export function subscribeToRoom(roomId, onUpdate) {
   });
 }
  
-// ─── Movies in a Room ──────────────────────────────────────────────────────
+//Add a movie to a room's sub-collection.
+//`movieData` should be a normalized TMDB movie object.
  
-/**
- * Add a movie to a room's sub-collection.
- * `movieData` should be a normalized TMDB movie object.
- */
 export async function addMovieToRoom(roomId, movieData) {
   const user = currentUser();
  
@@ -165,17 +150,13 @@ export async function addMovieToRoom(roomId, movieData) {
   });
 }
  
-/**
- * Remove a movie from a room. Only the user who added it (or room creator) can remove it.
- */
+//Remove a movie from a room. Only the user who added it (or host) can remove it.
 export async function removeMovieFromRoom(roomId, movieDocId) {
   await deleteDoc(doc(db, 'rooms', roomId, 'movies', movieDocId));
 }
  
-/**
- * Real-time listener for a room's movie list.
- * Calls onUpdate with the full array whenever movies change.
- */
+//Real-time listener for a room's movie list.
+//Calls onUpdate with the full array whenever movies change.
 export function subscribeToRoomMovies(roomId, onUpdate) {
   const moviesRef = collection(db, 'rooms', roomId, 'movies');
   return onSnapshot(moviesRef, (snapshot) => {

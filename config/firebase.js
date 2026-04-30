@@ -38,7 +38,7 @@ export const auth = initializeAuth(app, {
   persistence: getReactNativePersistence(AsyncStorage),
 });
 
-
+//Allows for anonymous sign in to Firebase, so anyone can use the app
 export async function ensureAuth() {
   return new Promise((resolve) => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {

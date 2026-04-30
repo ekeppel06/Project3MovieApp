@@ -1,3 +1,5 @@
+//This deals with the voting process
+
 import {
   doc,
   getDoc,
@@ -6,15 +8,14 @@ import {
 } from 'firebase/firestore';
 import { db, auth } from '../config/firebase';
 
+//Returns current user (to differentiate from other users' votes)
 function currentUser() {
   const user = auth.currentUser;
   if (!user) throw new Error('Not authenticated');
   return user;
 }
- 
-/**
- * Host starts voting mode. Clears any previous votes.
- */
+
+//Host starts voting mode. Clears any previous votes.
 export async function startVoting(roomId) {
   const user = currentUser();
   const roomRef = doc(db, 'rooms', roomId);
@@ -31,9 +32,8 @@ export async function startVoting(roomId) {
   });
 }
  
-/**
- * Host ends voting mode. Records the end timestamp.
- */
+
+//Host ends voting mode. Records the end timestamp.
 export async function endVoting(roomId) {
   const user = currentUser();
   const roomRef = doc(db, 'rooms', roomId);
@@ -49,27 +49,27 @@ export async function endVoting(roomId) {
   });
 }
  
-/**
- * Cast or retract a vote for a movie.
- * Each user gets one vote total — voting for a new movie moves their vote.
- * Voting for the same movie again removes their vote (toggle).
+/*
+  Cast or retract a vote for a movie.
+  Each user gets one vote total — voting for a new movie moves their vote.
+  Voting for the same movie again removes their vote (aka a toggle).
  */
 export async function castVote(roomId, tmdbId, currentVotes = {}) {
   const user = currentUser();
   const roomRef = doc(db, 'rooms', roomId);
  
-  // Build the updated votes map
-  // First remove this user's vote from any movie they previously voted for
+  //Build the updated votes map
+  //First remove this user's vote from any movie they previously voted for
   const updatedVotes = {};
   for (const [id, voters] of Object.entries(currentVotes)) {
     const { [user.uid]: _, ...rest } = voters; // remove user's vote
     updatedVotes[id] = rest;
   }
  
-  // Check if they're toggling off (voted for this movie already)
+  //Check if they're toggling off (voted for this movie already)
   const alreadyVoted = currentVotes[tmdbId]?.[user.uid];
   if (!alreadyVoted) {
-    // Add their vote to the new movie
+    //Add their vote to the new movie
     updatedVotes[tmdbId] = {
       ...(updatedVotes[tmdbId] || {}),
       [user.uid]: true,
@@ -79,10 +79,10 @@ export async function castVote(roomId, tmdbId, currentVotes = {}) {
   await updateDoc(roomRef, { votes: updatedVotes });
 }
  
-/**
- * Calculate the winner from a votes map and movie list.
- * Returns the movie object with the most votes, or null if no votes cast.
- */
+
+//Calculate the winner
+//Returns the movie object with the most votes, or null if no votes cast.
+
 export function calculateWinner(votes = {}, movies = []) {
   if (!votes || Object.keys(votes).length === 0) return null;
  

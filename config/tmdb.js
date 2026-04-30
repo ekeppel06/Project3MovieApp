@@ -1,22 +1,19 @@
-// Get a free API key at: https://www.themoviedb.org/settings/api
-// Add it to your .env file as EXPO_PUBLIC_TMDB_API_KEY=your_key_here
+//Config file for TMDB (The Movie Database)
+
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 export const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p';
  
-// Image size options: w92, w154, w185, w342, w500, w780, original
+//Image sizing
 export const posterUrl = (path, size = 'w342') =>
   path ? `${TMDB_IMAGE_BASE}/${size}${path}` : null;
  
 export const backdropUrl = (path, size = 'w780') =>
   path ? `${TMDB_IMAGE_BASE}/${size}${path}` : null;
  
-// ─── Search ────────────────────────────────────────────────────────────────
- 
-/**
- * Search TMDB for movies by title query.
- * Returns an array of movie objects.
- */
+
+//Search TMDB for movies by title query.
+//Returns an array of movie objects.
 export async function searchMovies(query) {
   if (!query || query.trim().length === 0) return [];
  
@@ -29,14 +26,12 @@ export async function searchMovies(query) {
  
   const data = await response.json();
  
-  // Normalize the results into a clean shape for our app
   return data.results.map(normalizeMovie);
 }
  
-/**
- * Fetch full details for a single movie by its TMDB ID.
- * Includes genres, runtime, tagline, etc.
- */
+
+//Fetch full details for a single movie by its TMDB ID.
+
 export async function getMovieDetails(tmdbId) {
   const url = `${TMDB_BASE_URL}/movie/${tmdbId}?api_key=${TMDB_API_KEY}&language=en-US`;
  
@@ -47,12 +42,8 @@ export async function getMovieDetails(tmdbId) {
   return normalizeMovieDetails(data);
 }
  
-// ─── Normalization ─────────────────────────────────────────────────────────
  
-/**
- * Strips TMDB search result down to only what we store in Firestore.
- * Keeping the Firestore document small and consistent.
- */
+//Strips TMDB search result down to only what is stored in Firestore.
 export function normalizeMovie(tmdbMovie) {
   return {
     tmdbId: tmdbMovie.id,
