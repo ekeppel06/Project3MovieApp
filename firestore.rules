@@ -22,6 +22,16 @@ service cloud.firestore {
       allow delete: if request.auth != null
         && resource.data.createdBy == request.auth.uid;
 
+      allow update: if request.auth != null
+        && resource.data.memberIds.hasAny([request.auth.uid])
+      // Prevent members from changing votingActive (host only)
+    && (!request.resource.data.diff(resource.data).affectedKeys()
+          .hasAny(['votingActive', 'votingEndedAt', 'memberIds', 'inviteCode']));
+
+      // Separate rule for host-only fields
+      allow update: if request.auth != null
+        && resource.data.createdBy == request.auth.uid;
+
       // ── Movies sub-collection ──────────────────────────────────────────
       match /movies/{movieId} {
 
@@ -37,6 +47,8 @@ service cloud.firestore {
         // Only the person who added it can delete it
         allow delete: if request.auth != null
           && resource.data.addedBy == request.auth.uid;
+
+        
       }
     }
   }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { ensureAuth } from './config/firebase';
@@ -6,7 +7,9 @@ import { ensureAuth } from './config/firebase';
 import HomeScreen from './screens/HomeScreen';
 import RoomScreen from './screens/RoomScreen';
 import MovieSearchScreen from './screens/MovieSearchScreen';
- 
+import VotingScreen from './screens/VotingScreen';
+
+
 const Stack = createNativeStackNavigator();
  
 export default function App() {
@@ -17,6 +20,15 @@ export default function App() {
     ensureAuth().then(() => setReady(true));
   }, []);
   
+  if (!ready) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' }}>
+        <ActivityIndicator color="#e50914" size="large" />
+      </View>
+    );
+  }
+
+
   //App rendering
   return (
     <NavigationContainer>
@@ -35,6 +47,7 @@ export default function App() {
           component={MovieSearchScreen}
           options={({ route }) => ({ title: `Add to ${route.params.roomName}` })}
         />
+        <Stack.Screen name="Voting" component={VotingScreen} options={{ title: 'Vote 🗳' }}/>
       </Stack.Navigator>
     </NavigationContainer>
   );

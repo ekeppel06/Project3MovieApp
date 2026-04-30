@@ -1,12 +1,8 @@
 import { initializeApp } from "firebase/app";
-
 import { getFirestore } from 'firebase/firestore';
-
-import { initializeAuth, getReactNativePersistence, signInAnonymously } from 'firebase/auth';
-
+import { initializeAuth, getReactNativePersistence, browserLocalPersistence, signInAnonymously } from 'firebase/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-
+import { Platform } from 'react-native';
 
 
 // Your web app's Firebase configuration
@@ -40,13 +36,32 @@ const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
  
 // Auth with AsyncStorage persistence (keeps users logged in)
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+// Depends on platform (works differently on web than iOS)
+const getAuth = () => {
+  if (Platform.OS === 'web') {
+    return initializeAuth(app, {
+      persistence: browserLocalPersistence,
+    });
+  }
+  const AsyncStorage =
+    require('@react-native-async-storage/async-storage').default;
+  return initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+};
+
+export const auth = getAuth();
 
 export async function ensureAuth() {
-  if (!auth.currentUser) {
-    await signInAnonymously(auth);
-  }
-  return auth.currentUser;
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      unsubscribe();
+      if (user) {
+        resolve(user);
+      } else {
+        const result = await signInAnonymously(auth);
+        resolve(result.user);
+      }
+    });
+  });
 }

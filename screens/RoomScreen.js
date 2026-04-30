@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { subscribeToRoom, subscribeToRoomMovies, leaveRoom, removeMovieFromRoom } from '../services/roomService';
+import { startVoting, endVoting } from '../services/votingService';
 import { posterUrl } from '../config/tmdb';
 import { auth } from '../config/firebase';
  
@@ -18,9 +19,10 @@ export default function RoomScreen({ route, navigation }) {
   const { roomId } = route.params;
   const [room, setRoom] = useState(null);
   const [movies, setMovies] = useState([]);
+  const [hostActionLoading, setHostActionLoading] = useState(false);
   const currentUserId = auth.currentUser?.uid;
  
-  // ─── Real-time subscriptions ─────────────────────────────────────────────
+  // ─── Real-time subscriptions ───
   // Both listeners fire immediately with current data, then again on every change.
   // onSnapshot returns an unsubscribe function — we call it in the cleanup.
  
@@ -38,7 +40,20 @@ export default function RoomScreen({ route, navigation }) {
     };
   }, [roomId]);
  
-  // ─── Actions ─────────────────────────────────────────────────────────────
+
+    if (!room) {
+        return (
+        <View style={styles.centered}>
+            <ActivityIndicator color="#e50914" size="large" />
+        </View>
+        );
+    }
+
+    const isHost = room.createdBy === currentUserId;
+    const isVotingActive = room.votingActive === true;
+    const votingEnded = !isVotingActive && room.votingEndedAt;
+
+  // ─── Actions ───
  
   const handleShare = () => {
     Share.share({
@@ -76,7 +91,51 @@ export default function RoomScreen({ route, navigation }) {
     ]);
   };
  
-  // ─── Render ──────────────────────────────────────────────────────────────
+    const handleStartVoting = async () => {
+    if (movies.length < 2) {
+      Alert.alert('Not enough movies', 'Add at least 2 movies before starting a vote.');
+      return;
+    }
+    Alert.alert('Start Voting?', 'This will clear any previous votes and open the ballot for all members.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Start',
+        onPress: async () => {
+          setHostActionLoading(true);
+          try {
+            await startVoting(roomId);
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          } finally {
+            setHostActionLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+ 
+  const handleEndVoting = async () => {
+    Alert.alert('End Voting?', 'This will close the ballot and reveal the winner.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'End & Reveal',
+        onPress: async () => {
+          setHostActionLoading(true);
+          try {
+            await endVoting(roomId);
+            navigation.navigate('Voting', { roomId });
+          } catch (err) {
+            Alert.alert('Error', err.message);
+          } finally {
+            setHostActionLoading(false);
+          }
+        },
+      },
+    ]);
+  };
+
+
+  // ─── Render ───
  
   if (!room) {
     return (
@@ -125,6 +184,37 @@ export default function RoomScreen({ route, navigation }) {
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Voting status banner */}
+      {(isVotingActive || votingEnded) && (
+        <TouchableOpacity
+          style={[styles.votingBanner, isVotingActive ? styles.votingBannerActive : styles.votingBannerEnded]}
+          onPress={() => navigation.navigate('Voting', { roomId })}
+        >
+          <Text style={styles.votingBannerText}>
+            {isVotingActive ? '🗳  Voting is live — tap to vote!' : '🏆  Voting ended — tap to see results'}
+          </Text>
+        </TouchableOpacity>
+      )}
+ 
+      {/* Host-only voting controls */}
+      {isHost && (
+        <View style={styles.hostControls}>
+          <Text style={styles.hostLabel}>Host Controls</Text>
+          {hostActionLoading ? (
+            <ActivityIndicator color="#e50914" />
+          ) : isVotingActive ? (
+            <TouchableOpacity style={styles.endVoteBtn} onPress={handleEndVoting}>
+              <Text style={styles.endVoteBtnText}>⏹  End Voting & Reveal Winner</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity style={styles.startVoteBtn} onPress={handleStartVoting}>
+              <Text style={styles.startVoteBtnText}>🗳  Start Voting</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      )}
+
  
       {/* Movie list */}
       <FlatList
@@ -158,7 +248,8 @@ export default function RoomScreen({ route, navigation }) {
     </View>
   );
 }
- 
+
+//RoomScreen StyleSheet
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#121212' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#121212' },
@@ -177,6 +268,7 @@ const styles = StyleSheet.create({
   inviteBtn: { alignItems: 'center' },
   inviteCode: { color: '#e50914', fontSize: 20, fontWeight: '800', letterSpacing: 2 },
   inviteLabel: { color: '#888', fontSize: 11 },
+  
   list: { padding: 12, paddingBottom: 140 },
   movieCard: {
     flexDirection: 'row',
@@ -218,4 +310,31 @@ const styles = StyleSheet.create({
   fabText: { color: '#fff', fontWeight: '700', fontSize: 16 },
   leaveBtn: { position: 'absolute', bottom: 18, alignSelf: 'center' },
   leaveBtnText: { color: '#555', fontSize: 13 },
+  votingBanner: { padding: 12, alignItems: 'center' },
+  votingBannerActive: { backgroundColor: '#1a3a1a' },
+  votingBannerEnded: { backgroundColor: '#2a1f00' },
+  votingBannerText: { color: '#fff', fontWeight: '600', fontSize: 14 },
+  hostControls: {
+    backgroundColor: '#1a1a1a', padding: 12,
+    borderBottomWidth: 1, borderBottomColor: '#2a2a2a', gap: 8,
+  },
+  hostLabel: { color: '#555', fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 },
+  startVoteBtn: {
+    backgroundColor: '#1a3a1a', borderRadius: 10,
+    paddingVertical: 10, alignItems: 'center',
+    borderWidth: 1, borderColor: '#2d6a2d',
+  },
+  startVoteBtnText: { color: '#4caf50', fontWeight: '700', fontSize: 14 },
+  endVoteBtn: {
+    backgroundColor: '#3a1a1a', borderRadius: 10,
+    paddingVertical: 10, alignItems: 'center',
+    borderWidth: 1, borderColor: '#6a2d2d',
+  },
+  endVoteBtnText: { color: '#e50914', fontWeight: '700', fontSize: 14 },
+  list: { padding: 12, paddingBottom: 140 },
+  movieCard: {
+    flexDirection: 'row', backgroundColor: '#1e1e1e',
+    borderRadius: 10, marginBottom: 10, overflow: 'hidden',
+  },
+
 });
