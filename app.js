@@ -1,5 +1,8 @@
+import { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { ensureAuth } from './config/firebase';
+
 import HomeScreen from './screens/HomeScreen';
 import RoomScreen from './screens/RoomScreen';
 import MovieSearchScreen from './screens/MovieSearchScreen';
@@ -7,6 +10,14 @@ import MovieSearchScreen from './screens/MovieSearchScreen';
 const Stack = createNativeStackNavigator();
  
 export default function App() {
+  //Firestore Authentication
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    ensureAuth().then(() => setReady(true));
+  }, []);
+  
+  //App rendering
   return (
     <NavigationContainer>
       <Stack.Navigator
