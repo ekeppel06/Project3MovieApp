@@ -14,6 +14,7 @@ const Stack = createNativeStackNavigator();
  
 export default function App() {
   //Firestore Authentication
+  //Waits until user is authenticated through Firestore before attempting to render app to avoid errors
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
